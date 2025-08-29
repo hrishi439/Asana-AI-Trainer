@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Surya Namaskar Trainer</title>
+  <style>
+    body {
+      font-family: Inter, sans-serif;
+      margin: 0;
+      background: #0b0f14;
+      color: #e8f0f7;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .pose-list {
+      width: 220px;
+      background: #101823;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    .pose-item {
+      margin-bottom: 12px;
+      padding: 4px;
+      border-radius: 10px;
+      background: #1a1f2b;
+      cursor: pointer;
+      text-align: center;
+      transition: 0.3s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .pose-item img {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      object-fit: cover;
+    }
+    .pose-item.active {
+      border: 2px solid #ffd166;
+      background: rgba(255, 209, 102, 0.1);
+    }
+    .pose-item.active img {
+      width: 120px;
+      height: 120px;
+    }
+    .trainer-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px;
+    }
+    #cameraFeed {
+      border-radius: 14px;
+      background: #0c121b;
+    }
+    .controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 12px;
+      background: #ffb347;
+      color: #1b1200;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #ffd166;
+    }
+    h2 {
+      text-align: center;
+      margin: 0 0 12px;
+    }
+    #liveScore {
+      margin-top: 12px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Pose List -->
+<div class="pose-list" id="poseList"></div>
+
+<!-- Trainer Area -->
+<div class="trainer-area">
+  <h2>Surya Namaskar Trainer</h2>
+  <img id="cameraFeed" src="" width="640" height="480" style="display:none;">
+  
+  <!-- Controls -->
+  <div class="controls">
+    <button onclick="startCamera()">Start</button>
+    <button onclick="sendAction('stop')">Stop</button>
+    <button onclick="sendAction('next')">Next</button>
+    <button onclick="sendAction('back')">Back</button>
+    <button onclick="sendAction('retry')">Retry</button>
+  </div>
+
+  <p id="liveScore">Score: 0%</p>
+</div>
+
+<script>
+  const poses = [
+    {name:"Pranamasana (Prayer)", img:"pose1.jpg"},
+    {name:"Hasta Uttanasana (Raised Arms)", img:"pose2.jpg"},
+    {name:"Hasta Padasana (Forward Bend)", img:"pose3.jpg"},
+    {name:"Ashwa Sanchalanasana (Lunge Right)", img:"pose4.jpg"},
+    {name:"Phalakasana (Plank)", img:"pose5.jpg"},
+    {name:"Ashtanga Namaskara", img:"pose6.jpg"},
+    {name:"Bhujangasana (Cobra)", img:"pose7.jpg"},
+    {name:"Adho Mukha Svanasana (Downward Dog)", img:"pose8.jpg"},
+    {name:"Ashwa Sanchalanasana (Lunge Left)", img:"pose9.jpg"},
+    {name:"Hasta Padasana (Forward Bend)", img:"pose10.jpg"},
+    {name:"Hasta Uttanasana (Raised Arms)", img:"pose11.jpg"},
+    {name:"Pranamasana (Prayer)", img:"pose12.jpg"}
+  ];
+
+  let currentStep = 0;
+  let sessionCompleted = false;
+
+  // Render the list of poses
+  function renderPoses(){
+    const container = document.getElementById('poseList');
+    container.innerHTML = poses.map((p, i) => `
+      <div class="pose-item ${i === currentStep ? 'active' : ''}" onclick="jumpToPose(${i})">
+        <img src="/static/poses/${p.img}" alt="${p.name}">
+        <div>${p.name}</div>
+      </div>
+    `).join('');
+  }
+
+  function jumpToPose(i){
+    currentStep = i;
+    sendAction('jump');
+    renderPoses();
+  }
+
+  function startCamera(){
+    const feed = document.getElementById('cameraFeed');
+    feed.src = '/video_feed';
+    feed.style.display = 'inline-block';
+  }
+
+  // Send control actions to the backend
+  function sendAction(action){
+    fetch('/action', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action: action, step: currentStep})
+    })
+    .then(res => res.json())
+    .then(data => {
+      currentStep = data.step;
+      document.getElementById('liveScore').textContent = `Score: ${data.score || 0}%`;
+      renderPoses();
+
+      // When we reach the last pose the first time, log ONE session (12 poses = 1 session)
+// No auto-complete. Wait for user to click Stop.
+// No auto-complete. Wait for user to click Stop.
+      // Mark session as ready to complete
+      if (currentStep === poses.length - 1) {
+          sessionCompleted = true;  // Flag that session finished
+          showPopup("✅ You have completed all 12 poses! Click STOP to save your session.");
+      }
+
+
+
+      // Live update in home page (if open)
+      if(window.opener){
+        const w = window.opener;
+        if(w.document.getElementById('k-sessions')) w.document.getElementById('k-sessions').textContent = data.sessions || 0;
+        if(w.document.getElementById('k-best')) w.document.getElementById('k-best').textContent = (data.best || 0) + '%';
+        if(w.document.getElementById('k-streak')) w.document.getElementById('k-streak').textContent = data.streak || 0;
+        if(typeof w.refreshProgress === 'function') w.refreshProgress();
+      }
+    })
+    .catch(err => console.error('Error sending action:', err));
+  }
+
+  renderPoses();
+</script>
+
+<script>
+  // Save progress to backend and show popup
+  function completeSession(count) {
+    fetch('/update_progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ count: count })
+    })
+    .then(response => response.json())
+    .then(data => {
+      showPopup(`🎉 Session complete! ${count} round${count>1?'s':''} logged.`);
+      console.log('Progress updated:', data);
+    })
+    .catch(err => {
+      console.error('Error updating progress:', err);
+      showPopup('⚠️ Error saving your session. Try again.', '#dc3545');
+    });
+  }
+
+  // Popup message function
+  function showPopup(message, color = "#28a745") {
+    let popup = document.createElement('div');
+    popup.innerText = message;
+    popup.style = `
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: ${color};
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      font-size: 16px;
+      opacity: 0;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      transform: translateY(20px);
+      z-index: 1000;
+    `;
+    document.body.appendChild(popup);
+
+    setTimeout(() => {
+      popup.style.opacity = "1";
+      popup.style.transform = "translateY(0)";
+    }, 100);
+
+    setTimeout(() => {
+      popup.style.opacity = "0";
+      popup.style.transform = "translateY(20px)";
+      setTimeout(() => popup.remove(), 400);
+    }, 4000);
+  }
+</script>
+
+<!-- Back to Home Button -->
+<div style="margin-top:20px; text-align:center;">
+  <button id="backHomeBtn" style="
+    background:#ffb347;
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;">
+    Back to Home
+  </button>
+</div>
+
+<script>
+  document.getElementById('backHomeBtn').addEventListener('click', function () {
+    window.location.href = '/';
+  });
+
+
+  document.querySelector('.controls button[onclick="sendAction(\'stop\')"]').addEventListener('click', () => {
+    if (sessionCompleted) {
+        fetch('/update_progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ count: 1 }) // 1 session
+        })
+        .then(res => res.json())
+        .then(data => {
+            showPopup("🎉 Your session was completed!");
+            sessionCompleted = false; // reset for next session
+
+            // Update home page if open
+            if (window.opener) {
+                const w = window.opener;
+                if (w.document.getElementById('k-sessions')) w.document.getElementById('k-sessions').textContent = data.sessions || 0;
+                if (w.document.getElementById('k-best')) w.document.getElementById('k-best').textContent = (data.best || 0) + '%';
+                if (w.document.getElementById('k-streak')) w.document.getElementById('k-streak').textContent = data.streak || 0;
+                if (typeof w.refreshProgress === 'function') w.refreshProgress();
+            }
+        })
+        .catch(err => showPopup('⚠️ Failed to save session.', '#dc3545'));
+    } else {
+        showPopup("⚠️ Complete all poses before stopping.", '#ffc107');
+    }
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- =========================================================
+       Surya Namaskar AI Trainer — HOME (full page)
+       Fully integrated dashboard: KPIs, poses, badges, progress chart,
+       history, live updates from /progress_data and localStorage.
+       ========================================================= -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Surya Namaskar AI Trainer — Home</title>
+  <meta name="description" content="AI-powered Surya Namaskar trainer dashboard: live stats, badges, history, and progress chart." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --card:#101823;
+      --muted:#9bb0c3;
+      --text:#e8f0f7;
+      --brand:#ffb347;
+      --brand-2:#ffd166;
+      --accent:#5eead4;
+      --danger:#ff6b6b;
+      --ok:#22c55e;
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+      --max-width:1200px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,var(--bg),#0e1420 40%,var(--bg));
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+    a{color:inherit;text-decoration:none}
+    .container{max-width:var(--max-width);margin:auto;padding:0 20px}
+    header{position:sticky;top:0;z-index:50;background:rgba(11,15,20,.85);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.04)}
+    .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.5px}
+    .brand .logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:radial-gradient(65% 65% at 50% 40%,var(--brand-2),var(--brand));box-shadow:0 0 30px rgba(255,209,102,.25)}
+    .navlinks{display:flex;gap:14px;align-items:center}
+    .navlinks a{padding:8px 10px;border-radius:10px;color:var(--muted)}
+    .navlinks a:hover{background:rgba(255,255,255,.04);color:var(--text)}
+    .cta{background:linear-gradient(90deg,var(--brand-2),var(--brand));color:#1b1200;font-weight:800;padding:8px 12px;border-radius:12px}
+    .menu-btn{display:none}
+    @media (max-width:920px){
+      .menu-btn{display:block}
+      .navlinks{display:none}
+      .nav.open .navlinks{display:flex;position:absolute;top:64px;left:0;right:0;background:#0f1622;padding:14px 20px;flex-wrap:wrap}
+    }
+
+    /* layout sections */
+    main.hero{padding:56px 0 12px; background:
+      radial-gradient(900px 320px at 80% -10%, rgba(255,209,102,.08), transparent),
+      radial-gradient(900px 320px at 12% 0%, rgba(94,234,212,.04), transparent)}
+    .hero-wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:center}
+    @media (max-width:900px){.hero-wrap{grid-template-columns:1fr}}
+
+    h1{font-size:clamp(28px,4vw,44px);margin:0 0 8px}
+    p.lead{color:var(--muted);margin:0 0 18px;line-height:1.6}
+
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.06);padding:18px;border-radius:var(--radius);box-shadow:var(--shadow)}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+    @media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
+    .kpi{padding:16px}
+    .kpi h3{font-size:28px;margin:0}
+    .muted{color:var(--muted);font-size:13px}
+
+    /* grid areas for progress */
+    .grid{display:grid;gap:18px}
+    .progress-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:start}
+    @media (max-width:900px){.progress-grid{grid-template-columns:1fr}}
+
+    /* poses */
+    .pose-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    @media (max-width:900px){.pose-grid{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:620px){.pose-grid{grid-template-columns:1fr}}
+    .pose{display:flex;flex-direction:column;gap:10px}
+    .pose .thumb{height:140px;border-radius:12px;background:linear-gradient(135deg,rgba(255,209,102,.18),rgba(94,234,212,.12));display:grid;place-items:center;color:#1b1200;font-weight:900}
+
+    /* badges */
+    .badge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    @media (max-width:900px){.badge-grid{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:620px){.badge-grid{grid-template-columns:1fr}}
+    .badge{display:flex;gap:12px;align-items:center}
+    .badge .icon{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;background:radial-gradient(60% 60% at 50% 30%,var(--brand-2),var(--brand));font-size:20px}
+
+    /* table */
+    .table{width:100%;border-collapse:collapse;margin-top:12px}
+    .table th,.table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
+    .note{font-size:13px;color:var(--muted)}
+
+    footer.footer{border-top:1px solid rgba(255,255,255,.06);padding:20px 0;color:var(--muted);margin-top:26px}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;background:linear-gradient(90deg,var(--brand-2),var(--brand));color:#1b1200;font-weight:800;border:none;cursor:pointer}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav" id="nav">
+      <a class="brand" href="#home"><span class="logo">☀</span><span>Asana-AI</span></a>
+      <nav class="navlinks" aria-label="Primary">
+        <a href="#home">Home</a>
+        <a href="/train">Trainer</a>
+        <a href="#poses">Poses</a>
+        <a href="#progress">Progress</a>
+        <a href="#badges">Badges</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+        <a class="cta" href="/train">Start Training</a>
+      </nav>
+      <button class="menu-btn" onclick="document.getElementById('nav').classList.toggle('open')" aria-label="Open menu">☰</button>
+    </div>
+  </header>
+
+  <main id="home" class="hero">
+    <div class="container hero-wrap">
+      <div>
+        <div class="pill muted">Daily discipline • Mythic motivation</div>
+        <h1>Your personal <span style="background:linear-gradient(90deg,var(--brand-2),var(--brand));-webkit-background-clip:text;background-clip:text;color:transparent">Surya Namaskar</span> trainer</h1>
+        <p class="lead">Real-time posture guidance, streak-based motivation, and a library of the 12 classic poses — all in one calm, focused space. Data is stored locally on your device and mirrored by the server for the dashboard.</p>
+
+        <div class="kpis">
+          <div class="card kpi">
+            <div class="muted">Sessions</div>
+            <h3 id="k-sessions">0</h3>
+          </div>
+          <div class="card kpi">
+            <div class="muted">Best Accuracy</div>
+            <h3 id="k-best">0%</h3>
+          </div>
+          <div class="card kpi">
+            <div class="muted">Current Streak</div>
+            <h3 id="k-streak">0</h3>
+          </div>
+          <div class="card kpi">
+            <div class="muted">Badges</div>
+            <h3 id="k-badges">0</h3>
+          </div>
+          <a class="btn" href="/train">Start Training</a>
+        </div>
+
+      </div>
+
+      
+      </div>
+    </div>
+  </main>
+
+  <!-- POSES SECTION -->
+  <section id="poses" style="padding:40px 0">
+    <div class="container">
+      <h2>Pose Library — Surya Namaskar (12)</h2>
+      <p class="note">Each card shows the English & Sanskrit name. Click Learn More for details.</p>
+      <div class="pose-grid card" id="poseGrid" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- Pose Modal -->
+  <div id="poseModal" style="
+    display:none;
+    position:fixed;
+    top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.7);
+    z-index:9999;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    transition:opacity 0.3s ease;
+  ">
+    <div style="
+      background:var(--card);
+      border-radius:16px;
+      max-width:500px;
+      width:90%;
+      padding:24px;
+      position:relative;
+      color:var(--text);
+      max-height:80%;
+      overflow-y:auto;
+    ">
+      <button onclick="closePoseModal()" style="
+        position:absolute; top:12px; right:12px;
+        background:transparent; border:none; font-size:20px; cursor:pointer; color:var(--text);
+      ">&times;</button>
+      <img id="poseModalImg" src="" alt="" style="width:100%; border-radius:12px; margin-bottom:12px;">
+      <h3 id="poseModalName" style="margin:4px 0"></h3>
+      <p class="muted" id="poseModalEn"></p>
+      <h4>Steps</h4>
+      <pre id="poseModalSteps" style="white-space:pre-wrap;"></pre>
+      <h4>Tips</h4>
+      <p id="poseModalTips"></p>
+    </div>
+  </div>
+
+  <!-- PROGRESS SECTION -->
+  <section id="progress" style="padding:30px 0">
+    <div class="container">
+      <h2>Your Progress</h2>
+
+      <div class="progress-grid" style="margin-top:12px">
+        <div class="card">
+          <h3>Accuracy Over Time</h3>
+          <canvas id="progressCanvas" width="900" height="300" style="width:100%;border-radius:12px;background:#07101a"></canvas>
+          <p class="note" style="margin-top:8px">This chart shows your daily session counts and accuracy. Data comes from the server file and localStorage.</p>
+        </div>
+
+        <div class="card">
+          <h3>Recent Sessions</h3>
+          <table class="table" id="sessionTable">
+            <thead><tr><th>Date</th><th>Time</th><th>Sessions</th><th>Accuracy</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn" id="refreshBtn" type="button">Refresh Dashboard</button>
+            <button class="btn" id="exportBtn" type="button" style="background:linear-gradient(90deg,#8ed1c3,#5eead4)">Export JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BADGES -->
+  <section id="badges" style="padding:30px 0">
+    <div class="container">
+      <h2>Badges — Daily Surya Streak</h2>
+      <p class="note">Unlock mythic milestones as your daily discipline grows.</p>
+      <div id="badgeGrid" class="badge-grid" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="container grid" style="grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <h2>About This Project</h2>
+        <p>We blend ancient yoga wisdom with modern AI. The trainer focuses on Surya Namaskar, offering real-time feedback, a pose library, and a streak-driven badge system inspired by Indian Itihasa.</p>
+        <h3>Mission</h3>
+        <p class="muted">Make yoga accessible, accurate, and inspiring — while honoring its roots.</p>
+        <h3>Tech</h3>
+        <ul class="muted">
+          <li>Webcam + on-device inference (privacy-first)</li>
+          <li>Pose detection via MediaPipe / similar models</li>
+          <li>Local history with optional cloud sync</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Why Surya Namaskar?</h3>
+        <p class="muted">Surya Namaskar, or Sun Salutation, is an ancient yogic practice of twelve graceful postures performed in a flowing sequence with synchronized breathing, symbolizing the eternal cycle of life. Traditionally practiced at sunrise with the chanting of twelve Surya mantras, it nurtures body, mind, and spirit.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+   
+  <section id="contact" style="padding:60px 20px; background:#111; color:#fff; text-align:center;">
+  <h2 style="font-size:2rem; margin-bottom:20px;">Contact Us</h2>
+  <p style="max-width:600px; margin:0 auto 30px; color:#ccc;">
+    Have questions, feedback, or ideas for collaboration? Send us a message.
+  </p>
+
+  <form action="mailto:hrishimallela2006@gmail.com" method="post" enctype="text/plain"
+        style="max-width:600px; margin:0 auto; display:grid; gap:15px;">
+    <input type="text" name="name" placeholder="Your Name" required
+      style="padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.2); background:#222; color:#fff; font-size:1rem;"/>
+    <input type="email" name="email" placeholder="Your Email" required
+      style="padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.2); background:#222; color:#fff; font-size:1rem;"/>
+    <textarea name="message" rows="5" placeholder="Your Message" required
+      style="padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.2); background:#222; color:#fff; font-size:1rem; resize:none;"></textarea>
+    <button type="submit"
+      style="padding:15px; border:none; border-radius:12px; background:#e3a51d; color:#fff; font-size:1.1rem; font-weight:bold; cursor:pointer; transition:0.3s;">
+      Send Message
+    </button>
+  </form>
+</section>
+
+</section>
+
+
+
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div>© <span id="year"></span> Surya Trainer • Made with ☀</div>
+      <div class="note">Privacy-friendly: data stored locally unless you add cloud sync.</div>
+    </div>
+  </footer>
+  <!-- =========================
+       SCRIPTS: Logic / Rendering
+       ========================= -->
+  <script>
+    // -------------------------
+    // POSES + BADGES (local)
+    // -------------------------
+    const POSES = [
+      ['Pranamasana','Prayer Pose','🙏'],
+      ['Hasta Uttanasana','Raised Arms','🙌'],
+      ['Padahastasana','Hand to Foot','🤸'],
+      ['Ashwa Sanchalanasana','Equestrian','🐎'],
+      ['Dandasana','Plank / Stick','🪵'],
+      ['Ashtanga Namaskara','Eight-limb Salute','🌸'],
+      ['Bhujangasana','Cobra','🐍'],
+      ['Adho Mukha Svanasana','Downward Dog','🐕'],
+      ['Ashwa Sanchalanasana','Equestrian (other side)','🐎'],
+      ['Padahastasana','Hand to Foot (return)','🤸'],
+      ['Hasta Uttanasana','Raised Arms (return)','🙌'],
+      ['Pranamasana','Prayer (end)','🙏'],
+    ];
+
+    const BADGES = [
+      { id:'aruna',       days:1,   name:'Aruna',          label:'Dawn Rider',        icon:'🌅', desc:'First light of discipline.' },
+      { id:'agni',        days:7,   name:'Agni Deva',      label:'Fire Awakened',     icon:'🔥', desc:'Inner fire kindled.' },
+      { id:'gayatri',     days:14,  name:'Gayatri',        label:'Sacred Light',      icon:'🕉', desc:'Breath like mantra.' },
+      { id:'arjuna',      days:21,  name:'Arjuna',         label:'Eye of Focus',      icon:'🏹', desc:'One-pointed concentration.' },
+      { id:'nataraja',    days:30,  name:'Nataraja',       label:'Dance of Energy',   icon:'🕺', desc:'Rhythm & transformation.' },
+      { id:'aditya',      days:60,  name:'Aditya Mandala', label:'Circle of Suns',    icon:'✨', desc:'Cycle of 12 Adityas.' },
+      { id:'muralidhara', days:90,  name:'Muralidhara',    label:'Krishna’s Harmony', icon:'🎶', desc:'Breath flows like music.' },
+      { id:'suryanatha',  days:365, name:'Suryanatha',     label:'Master of the Sun', icon:'👑', desc:'Union with Surya.' },
+    ];
+
+    // -------------------------
+    // State helpers (localStorage mirror)
+    // -------------------------
+    function loadStateLocal(){
+      return {
+        sessionsCount: Number(localStorage.getItem('sessionsCount') || 0),
+        best: Number(localStorage.getItem('best') || 0),
+        streak: Number(localStorage.getItem('streak') || 0),
+        lastDay: localStorage.getItem('lastDay') || null,
+        badges: JSON.parse(localStorage.getItem('badges') || '[]'),
+        history: JSON.parse(localStorage.getItem('history') || '[]')
+      };
+    }
+
+    function saveStateLocal(state){
+      localStorage.setItem('sessionsCount', state.sessionsCount);
+      localStorage.setItem('best', state.best);
+      localStorage.setItem('streak', state.streak);
+      localStorage.setItem('lastDay', state.lastDay);
+      localStorage.setItem('badges', JSON.stringify(state.badges));
+      localStorage.setItem('history', JSON.stringify(state.history));
+      // Dispatch storage event manually for same-tab listeners
+      window.dispatchEvent(new StorageEvent('storage', { key: 'history', newValue: JSON.stringify(state.history) }));
+    }
+
+    // -------------------------
+    // DOM renderers
+    // -------------------------
+
+  // ------------------------- POSE LIBRARY -------------------------
+    const POSE = [
+      { name: "Pranamasana", en: "Prayer Pose", img: "pose1.jpg",
+        steps: "1. Stand straight with feet together.\n2. Bring palms together at chest.\n3. Keep shoulders relaxed and chin parallel to floor.",
+        tips: "Engage your core slightly. Close your eyes and focus on your breath."
+      },
+      { name: "Hasta Uttanasana", en: "Raised Arms Pose", img: "pose2.jpg",
+        steps: "1. Inhale, stretch arms overhead.\n2. Arch back slightly and look up.\n3. Palms facing each other.",
+        tips: "Don’t strain the lower back; engage abs. Keep shoulders away from ears."
+      },
+      { name: "Hasta Padasana", en: "Forward Bend Pose", img: "pose3.jpg",
+        steps: "1. Exhale, bend forward from hips.\n2. Try to touch toes or place palms on floor.\n3. Keep knees straight but not locked.",
+        tips: "Focus on hinging at hips, not rounding back. Slight bend in knees is okay if hamstrings are tight."
+      },
+      { name: "Ashwa Sanchalanasana (Right)", en: "Lunge Pose – Right Leg", img: "pose4.jpg",
+        steps: "1. Inhale, step right leg back.\n2. Keep left knee over ankle.\n3. Raise chest and look forward.",
+        tips: "Stretch hip flexors of back leg. Keep shoulders relaxed."
+      },
+      { name: "Phalakasana", en: "Plank Pose", img: "pose5.jpg",
+        steps: "1. Bring left leg back to form a straight line from head to heels.\n2. Hands under shoulders.",
+        tips: "Engage core to prevent sagging hips. Keep neck neutral."
+      },
+      { name: "Ashtanga Namaskara", en: "Knees-Chest-Chin Pose", img: "pose6.jpg",
+        steps: "1. Lower knees, chest, and chin to floor.\n2. Hips slightly raised.",
+        tips: "Keep elbows close to ribs. Don’t let shoulders collapse."
+      },
+      { name: "Bhujangasana", en: "Cobra Pose", img: "pose7.jpg",
+        steps: "1. Inhale, lift chest using back muscles.\n2. Keep elbows slightly bent.",
+        tips: "Press pubic bone lightly. Lift with chest, not hands."
+      },
+      { name: "Adho Mukha Svanasana", en: "Downward Dog Pose", img: "pose8.jpg",
+        steps: "1. Exhale, lift hips up and back.\n2. Form an inverted V shape.\n3. Heels toward floor, hands shoulder-width apart.",
+        tips: "Keep spine long. Pedal heels if hamstrings are tight."
+      },
+      { name: "Ashwa Sanchalanasana (Left)", en: "Lunge Pose – Left Leg", img: "pose9.jpg",
+        steps: "1. Step left leg forward.\n2. Right leg back, chest lifted.",
+        tips: "Keep front knee aligned over ankle. Stretch back hip flexors."
+      },
+      { name: "Hasta Padasana", en: "Forward Bend Pose", img: "pose10.jpg",
+        steps: "1. Exhale, bring both feet forward, fold over legs.",
+        tips: "Lengthen spine, don’t round shoulders. Slightly bend knees if needed."
+      },
+      { name: "Hasta Uttanasana", en: "Raised Arms Pose", img: "pose11.jpg",
+        steps: "1. Inhale, stretch arms overhead and arch back slightly.",
+        tips: "Engage core to support lower back. Look upward gently."
+      },
+      { name: "Pranamasana", en: "Prayer Pose", img: "pose12.jpg",
+        steps: "1. Exhale, bring palms together at chest.\n2. Stand tall and relax shoulders.",
+        tips: "Close eyes and focus on breath. Feel energy through the body."
+      }
+    ];
+
+    function renderPoseGrid(){
+      const grid = document.getElementById('poseGrid');
+      grid.innerHTML = POSE.map(pose => `
+        <article class="pose card" role="article" aria-label="${pose.name}">
+          <img src="/static/poses/${pose.img}" alt="${pose.name}" style="width:100%;border-radius:8px;">
+          <div>
+            <h4 style="margin:4px 0">${pose.name}</h4>
+            <div class="muted">${pose.en}</div>
+          </div>
+          <div style="margin-top:10px">
+            <button class="btn" onclick="showPoseDetails('${pose.name}')">Learn More</button>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function showPoseDetails(name){
+      const pose = POSE.find(p=>p.name===name);
+      if(!pose) return;
+      const modal = document.getElementById('poseModal');
+      document.getElementById('poseModalImg').src = `/static/poses/${pose.img}`;
+      document.getElementById('poseModalName').textContent = pose.name;
+      document.getElementById('poseModalEn').textContent = pose.en;
+      document.getElementById('poseModalSteps').textContent = pose.steps;
+      document.getElementById('poseModalTips').textContent = pose.tips;
+      modal.style.display = 'flex';
+      setTimeout(()=>modal.style.opacity=1,50);
+    }
+
+    function closePoseModal(){
+      const modal = document.getElementById('poseModal');
+      modal.style.opacity=0;
+      setTimeout(()=>modal.style.display='none',300);
+    }
+
+    renderPoseGrid();  
+
+
+
+
+    function renderKpisFromProgress(progress){
+      // sessions = sum of counts (each count is a session)
+      const sessions = (progress.counts || []).reduce((a,b)=>a+b,0);
+      const best = progress.accuracy && progress.accuracy.length ? Math.max(...progress.accuracy) : 0;
+      const streak = progress.streak || 0;
+      const badgesCount = (progress.badges ? progress.badges.length : 0);
+      document.getElementById('k-sessions').textContent = sessions;
+      document.getElementById('k-best').textContent = best + '%';
+      document.getElementById('k-streak').textContent = streak;
+      document.getElementById('k-badges').textContent = badgesCount;
+    }
+
+    function renderBadgeGrid(progress){
+      const grid = document.getElementById('badgeGrid');
+      const unlocked = progress.badges || [];
+      const streak = progress.streak || 0;
+      grid.innerHTML = BADGES.map(b => {
+        const isUnlocked = unlocked.includes(b.id) || unlocked.includes(b.name) || unlocked.includes(b.label);
+        const pct = Math.min(100, Math.round((streak / b.days) * 100));
+        return `
+          <article class="card badge" title="${b.label}: ${b.desc}">
+            <div class="icon">${b.icon}</div>
+            <div>
+              <strong style="display:block">${b.name}</strong>
+              <div class="muted">Unlock at ${b.days}-day streak</div>
+              <div class="progressbar" style="margin-top:6px;height:10px;border-radius:8px;background:#0c121b;border:1px solid rgba(255,255,255,.04);overflow:hidden">
+                <span style="display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--brand-2));width:${pct}%;"></span>
+              </div>
+              <div style="margin-top:6px">${isUnlocked ? '<span style="color:var(--ok)">Unlocked</span>' : '<span class="muted">Locked</span>'}</div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderSessionsTable(progress){
+      const tb = document.querySelector('#sessionTable tbody');
+      const recent = (progress.history || []).slice(-10).reverse();
+      if(!recent.length){
+        tb.innerHTML = `<tr><td colspan="4" class="note">No sessions yet — complete a session to populate history.</td></tr>`;
+        return;
+      }
+      tb.innerHTML = recent.map(s => `
+        <tr>
+          <td>${s.date || '-'}</td>
+          <td>${s.time || '-'}</td>
+          <td>${s.count ?? 0}</td>
+          <td>${s.accuracy ?? '-' }%</td>
+        </tr>
+      `).join('');
+    }
+
+    // -------------------------
+    // Chart rendering (Canvas 2D)
+    // -------------------------
+    let cachedProgress = null;
+    function renderProgressCanvas(progress){
+      cachedProgress = progress;
+      const c = document.getElementById('progressCanvas');
+      const ctx = c.getContext('2d');
+      // reset
+      ctx.clearRect(0,0,c.width,c.height);
+      // background
+      ctx.fillStyle = '#07101a';
+      ctx.fillRect(0,0,c.width,c.height);
+
+      const dates = progress.dates || [];
+      const counts = progress.counts || [];
+      const accuracy = progress.accuracy || [];
+
+      // axes margins
+      const left = 50, top = 20, right = 30, bottom = 40;
+      const w = c.width - left - right;
+      const h = c.height - top - bottom;
+
+      // draw axes
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(left, top);
+      ctx.lineTo(left, top + h);
+      ctx.lineTo(left + w, top + h);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '12px Inter, sans-serif';
+      ctx.fillText('Counts / Accuracy', 8, 14);
+
+      if(!dates.length){
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillText('No data yet — complete a session to see your chart.', left + 80, top + h/2);
+        return;
+      }
+
+      // compute scales
+      const maxCount = Math.max(1, ...counts);
+      const maxY = Math.max(maxCount, 1);
+
+      const mapX = (i) => left + (w * (i / Math.max(1, dates.length - 1)));
+      const mapYCount = (v) => top + h - (h * (v / (maxY)));
+      const mapYAcc = (v) => top + h - (h * (v / 100));
+
+      // gridlines
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      for(let i=0;i<=4;i++){
+        const yy = top + (h * (i/4));
+        ctx.beginPath(); ctx.moveTo(left, yy); ctx.lineTo(left + w, yy); ctx.stroke();
+      }
+
+      // draw counts line
+      ctx.beginPath();
+      for(let i=0;i<dates.length;i++){
+        const x = mapX(i), y = mapYCount(counts[i] || 0);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = 'rgba(94,234,212,0.95)'; ctx.lineWidth = 2; ctx.stroke();
+
+      // draw accuracy line
+      ctx.beginPath();
+      for(let i=0;i<dates.length;i++){
+        const x = mapX(i), y = mapYAcc(accuracy[i] || 0);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = 'rgba(255,209,102,0.95)'; ctx.lineWidth = 2; ctx.stroke();
+
+      // draw points
+      for(let i=0;i<dates.length;i++){
+        const x = mapX(i);
+        const yc = mapYCount(counts[i] || 0);
+        ctx.beginPath(); ctx.fillStyle='rgba(94,234,212,0.95)'; ctx.arc(x,yc,3,0,Math.PI*2); ctx.fill();
+        const ya = mapYAcc(accuracy[i] || 0);
+        ctx.beginPath(); ctx.fillStyle='rgba(255,209,102,0.95)'; ctx.arc(x,ya,3,0,Math.PI*2); ctx.fill();
+      }
+
+      // draw x labels (rotate if many)
+      ctx.fillStyle='rgba(255,255,255,0.7)';
+      ctx.font = '11px Inter, sans-serif';
+      const step = Math.ceil(dates.length / 6);
+      for(let i=0;i<dates.length;i+=step){
+        const x = mapX(i);
+        ctx.save();
+        ctx.translate(x, top + h + 14);
+        ctx.rotate(-Math.PI/8);
+        ctx.fillText(dates[i], -10, 0);
+        ctx.restore();
+      }
+    }
+
+    // -------------------------
+    // Fetch /progress_data and update page
+    // -------------------------
+    async function fetchProgressAndRender(){
+      try {
+        const res = await fetch('/progress_data');
+        if(!res.ok) {
+          console.warn('progress_data returned', res.status);
+          const s = loadStateLocal();
+          renderKpisFromProgress({
+            dates: [],
+            counts: [],
+            accuracy: [],
+            badges: s.badges || [],
+            history: s.history || [],
+            streak: s.streak || 0
+          });
+          renderSessionsTable({ history: s.history || [] });
+          renderBadgeGrid({ badges: s.badges || [], streak: s.streak || 0 });
+          return;
+        }
+        const progress = await res.json();
+
+        // ensure arrays exist
+        progress.dates = progress.dates || [];
+        progress.counts = progress.counts || [];
+        progress.accuracy = progress.accuracy || [];
+        progress.badges = progress.badges || [];
+        progress.history = progress.history || [];
+        progress.streak = progress.streak || 0;
+
+        // Save mirror to localStorage for offline / export
+        try {
+          const local = loadStateLocal();
+          local.history = progress.history.slice(-100);
+          local.badges = progress.badges;
+          local.streak = progress.streak;
+          local.sessionsCount = (progress.counts || []).reduce((a,b)=>a+b,0);
+          local.best = progress.accuracy.length ? Math.max(...progress.accuracy) : 0;
+          saveStateLocal(local);
+          localStorage.setItem('progress_mirror', JSON.stringify(progress)); // ✅ ensure export works
+        } catch(e){ /* ignore */ }
+
+        // render UI
+        renderKpisFromProgress(progress);
+        renderBadgeGrid(progress);
+        renderSessionsTable(progress);
+        renderProgressCanvas(progress);
+
+      } catch (err) {
+        console.error('Error fetching progress_data:', err);
+      }
+    }
+
+    // initial render
+    document.getElementById('year').textContent = new Date().getFullYear();
+    renderPoseGrid();
+    fetchProgressAndRender();
+
+    // refresh button
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      fetchProgressAndRender();
+      showTempNotice('Dashboard refreshed');
+    });
+
+    // export JSON - downloads progress.json from server if available or local mirror
+    document.getElementById('exportBtn').addEventListener('click', async () => {
+      try {
+        const res = await fetch('/progress_data');
+        let data;
+        if(res.ok) data = await res.json();
+        else data = JSON.parse(localStorage.getItem('progress_mirror') || '{}');
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'progress_export.json'; a.click();
+        URL.revokeObjectURL(url);
+      } catch(e){
+        console.error('Export failed', e);
+        showTempNotice('Export failed', true);
+      }
+    });
+
+    // -------------------------
+    // Helpers: small popup
+    // -------------------------
+    function showTempNotice(text, isError=false){
+      const color = isError ? '#d9534f' : '#28a745';
+      const el = document.createElement('div');
+      el.textContent = text;
+      el.style = `position:fixed;bottom:24px;right:24px;background:${color};color:white;padding:12px 16px;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.3);z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s`;
+      document.body.appendChild(el);
+      requestAnimationFrame(()=>{ el.style.opacity='1'; el.style.transform='translateY(0)'; });
+      setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(10px)'; setTimeout(()=>el.remove(),300); },3500);
+    }
+
+    // -------------------------
+    // Live update mechanisms
+    // -------------------------
+    window.addEventListener('storage', (e) => {
+      if(['history','badges','streak','progress_mirror'].includes(e.key)){
+        fetchProgressAndRender();
+      }
+    });
+
+    // Poll every 8 seconds
+    setInterval(fetchProgressAndRender, 8000);
+
+    // Expose a function for manual update trigger
+    window.refreshProgress = fetchProgressAndRender;
+  </script>
+
+  <!-- end body -->
+</body>
+</html>
+
