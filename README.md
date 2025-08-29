@@ -11,8 +11,8 @@ A lightweight, production-ready toolkit to **train, evaluate, and deploy models 
 ###  Clone the repo
 
 ```bash
-git clone https://github.com/<your-username>/<your-repo>.git
-cd <your-repo>
+git clone https://github.com/hrishi439/Asana-AI-Trainer/tree/main
+cd <https://github.com/hrishi439/Asana-AI-Trainer/edit/main/README.md>
 ```
 
 
@@ -183,5 +183,5 @@ Attach ZIP or wheel to GitHub Releases for easy download.
 ## 🔗 Direct Download Links
 
 Main branch:
-  `https://github.com/<your-username>/<your-repo>/archive/refs/heads/main.zip`
+  `https://github.com/hrishi439/Asana-AI-Trainer/edit/main`
 
